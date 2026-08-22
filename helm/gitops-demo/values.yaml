@@ -1,0 +1,19 @@
+replicaCount: 3
+
+image:
+  repository: gitops-demo
+  tag: local
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80
+  targetPort: 8000
+  type: ClusterIP
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "250m"
+    memory: "256Mi"
