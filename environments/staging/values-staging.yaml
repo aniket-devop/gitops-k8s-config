@@ -1,0 +1,10 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/aniket-devop/gitops-demo
+  tag: initial
+
+service:
+  port: 80
+  targetPort: 8000
+  type: ClusterIP
