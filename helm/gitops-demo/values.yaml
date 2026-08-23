@@ -1,4 +1,4 @@
-replicaCount: 3
+﻿replicaCount: 3
 
 image:
   repository: gitops-demo
@@ -17,3 +17,17 @@ resources:
   limits:
     cpu: "250m"
     memory: "256Mi"
+
+livenessProbe:
+  path: /health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
+
+readinessProbe:
+  path: /health
+  initialDelaySeconds: 3
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 3

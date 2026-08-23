@@ -1,6 +1,6 @@
-apiVersion: v2
+﻿apiVersion: v2
 name: gitops-demo
 description: Helm chart for the gitops-demo-app GitOps demonstration project
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "1.0.0"
