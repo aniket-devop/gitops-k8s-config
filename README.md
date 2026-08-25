@@ -107,9 +107,8 @@ Chart `gitops-demo`, v0.2.0, appVersion `1.0.0`. Base `values.yaml` sets 3 repli
 | `replicaCount` | 3 | 1 | 2 |
 | `image.tag` | `local` | `b65229a` (CI-managed) | `initial` (static, not CI-managed) |
 
-Environment files only override `replicaCount` and `image` — probes and resources are inherited unchanged from the base chart. **Staging has values but no ArgoCD `Application`**, so it's configuration only, not an automated or deployed environment.
+Environment files only override `replicaCount` and `image` — probes and resources are inherited unchanged from the base chart. **Staging has an ArgoCD `Application`, but it's not automated** — there's no `prune`/`selfHeal`, so it requires a manual sync rather than deploying on its own.
 
-**Known inconsistency:** the chart's `appVersion` (`1.0.0`) and the running app's `/version` response (`2.0.0`) don't match. Both are stated as-is from their respective files; I haven't reconciled them, and no config ties one to the other.
 
 **Health probes:** both liveness and readiness check `/health` on port 8000, but with different timing and different consequences on failure. Liveness (`initialDelaySeconds: 5`, `failureThreshold: 3`) restarts the container after repeated failures — it assumes the process is unrecoverable without a restart. Readiness (`initialDelaySeconds: 3`, `failureThreshold: 3`) instead pulls the Pod out of the Service's endpoint list without touching its lifecycle — it assumes the Pod may still recover on its own. I exercised both manually against a running Pod by breaking the `/health` route and watching the expected behavior in `kubectl get pods` (restart count increasing for liveness; `READY` dropping to `0/1` with no restart for readiness) — this is a manual observation, not something backed by a captured log or script in either repo.
 
@@ -156,7 +155,7 @@ Reported but **not** independently backed by a file, log, or screenshot in eithe
 
 ## Limitations
 
-- Only `dev` is automated; `staging` has values but no `Application` and no promotion path from `dev`
+- Only `dev` is automated; `staging` has an `Application` but requires manual sync, and there's no promotion path from `dev`
 - No Ingress/TLS — `ClusterIP` only, cluster-internal
 - No Horizontal Pod Autoscaler; static replica counts
 - No NetworkPolicy or RBAC manifests
