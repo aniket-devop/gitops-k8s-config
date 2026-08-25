@@ -6,7 +6,7 @@ A FastAPI service that's tested, scanned, and published by GitHub Actions, then 
 
 ## Quick Overview
 
-I designed, built, and validated this GitOps pipeline end-to-end. It's split across two repositories on purpose: [`gitops-demo-app`](https://github.com/aniket-devop/gitops-demo-app) owns the application and CI, and [`gitops-k8s-config`](https://github.com/aniket-devop/gitops-k8s-config) (this repo) owns the desired cluster state that ArgoCD reconciles against.
+I designed, built, and validated this GitOps pipeline end-to-end. It's split across two repositories on purpose: [`gitops-ci-pipeline`](https://github.com/aniket-devop/gitops-ci-pipeline) owns the application and CI, and [`gitops-kubernetes-config`](https://github.com/aniket-devop/gitops-kubernetes-config) (this repo) owns the desired cluster state that ArgoCD reconciles against.
 
 **Stack:** FastAPI · pytest · Docker (non-root, `python:3.12-alpine`) · Trivy · GHCR · Helm · ArgoCD · Kind.
 
@@ -24,7 +24,7 @@ My role was building both repositories, wiring the CI pipeline, writing the Helm
 
 Two halves, deliberately kept apart:
 
-- **CI (build & publish)** — `gitops-demo-app` tests, builds, scans, and pushes an image to GHCR.
+- **CI (build & publish)** — `gitops-ci-pipeline` tests, builds, scans, and pushes an image to GHCR.
 - **CD (GitOps reconciliation)** — this repo holds the desired state; ArgoCD watches it and reconciles the cluster.
 
 Separating them means the app team never needs cluster credentials, and the cluster's desired state is always fully described in Git, independent of any single CI run. GHCR is a passive artifact store here — it does not push to ArgoCD or to this repo; Kubernetes pulls from it during deployment, nothing more. The `gitops-demo` GHCR package is public, so no `imagePullSecrets` or registry credentials are required on the cluster side — only the CI push requires authentication.
@@ -35,7 +35,7 @@ Separating them means the app team never needs cluster credentials, and the clus
 
 ## CI Pipeline
 
-On every push to `main` in `gitops-demo-app`, `.github/workflows/ci.yml` runs:
+On every push to `main` in `gitops-ci-pipeline`, `.github/workflows/ci.yml` runs:
 
 1. Checkout, set up Python 3.12, install dependencies
 2. Run `pytest` — a failing test blocks everything downstream
@@ -47,7 +47,7 @@ On every push to `main` in `gitops-demo-app`, `.github/workflows/ci.yml` runs:
 
 Steps 1–6 never touch this repository, and step 7 never touches Kubernetes — it only commits a changed value file.
 
-**Evidence:** the automated commits `aed4bb5`, `6d381aa`, `978b36d`, `b65229a` in this repo's history are all CI-generated tag bumps, and the current `dev` tag (`b65229a`) matches the latest commit SHA in `gitops-demo-app`.
+**Evidence:** the automated commits `aed4bb5`, `6d381aa`, `978b36d`, `b65229a` in this repo's history are all CI-generated tag bumps, and the current `dev` tag (`b65229a`) matches the latest commit SHA in `gitops-ci-pipeline`.
 
 **Why GHCR:** it's already authenticated through the existing `GITHUB_TOKEN`, so there's no separate registry account or credential set to manage, and the image lives next to the repo that builds it. That's a practical fit for this project's scope — not a claim that GHCR is inherently better than Docker Hub or a cloud registry.
 
@@ -57,9 +57,9 @@ Steps 1–6 never touch this repository, and step 7 never touches Kubernetes —
 
 ## GitOps / CD Flow
 
-**GitHub Actions does not deploy directly to Kubernetes.** It stops at committing an updated image tag to `gitops-k8s-config`. From there:
+**GitHub Actions does not deploy directly to Kubernetes.** It stops at committing an updated image tag to `gitops-kubernetes-config`. From there:
 
-`gitops-k8s-config (Git) → ArgoCD (watches this repo) → Kind cluster → FastAPI Pods`
+`gitops-kubernetes-config (Git) → ArgoCD (watches this repo) → Kind cluster → FastAPI Pods`
 
 ArgoCD is the only component with cluster credentials. It runs with automated sync, `prune: true`, and `selfHeal: true` — so it syncs without manual approval, removes resources deleted from Git, and reverts any manual `kubectl` change made directly against the cluster back to what's in Git. Only the `dev` environment has an `Application` wired up.
 
@@ -79,13 +79,13 @@ Local ArgoCD instance running at `127.0.0.1:8080` — confirms this is an actual
 
 | Repo | Contains | Role |
 |---|---|---|
-| `gitops-demo-app` | FastAPI source, `Dockerfile`, `tests/`, `.github/workflows/ci.yml` | Owns app code and image build; never touches the cluster |
-| `gitops-k8s-config` (this repo) | `argocd/application.yaml`, `helm/gitops-demo/` (chart + templates), `environments/dev`, `environments/staging` | Owns desired cluster state; watched by ArgoCD |
+| `gitops-ci-pipeline` | FastAPI source, `Dockerfile`, `tests/`, `.github/workflows/ci.yml` | Owns app code and image build; never touches the cluster |
+| `gitops-kubernetes-config` (this repo) | `argocd/application.yaml`, `helm/gitops-demo/` (chart + templates), `environments/dev`, `environments/staging` | Owns desired cluster state; watched by ArgoCD |
 
 This repo's layout:
 
 ```
-gitops-k8s-config/
+gitops-kubernetes-config/
 ├── argocd/application.yaml
 ├── environments/
 │   ├── dev/values-dev.yaml

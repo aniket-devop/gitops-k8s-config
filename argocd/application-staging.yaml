@@ -1,4 +1,4 @@
-﻿apiVersion: argoproj.io/v1alpha1
+apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: gitops-demo-staging
@@ -7,7 +7,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/aniket-devop/gitops-k8s-config.git
+    repoURL: https://github.com/aniket-devop/gitops-kubernetes-config.git
     targetRevision: main
     path: helm/gitops-demo
     helm:
