@@ -27,7 +27,7 @@ Two halves, deliberately kept apart:
 - **CI (build & publish)** — `gitops-demo-app` tests, builds, scans, and pushes an image to GHCR.
 - **CD (GitOps reconciliation)** — this repo holds the desired state; ArgoCD watches it and reconciles the cluster.
 
-Separating them means the app team never needs cluster credentials, and the cluster's desired state is always fully described in Git, independent of any single CI run. GHCR is a passive artifact store here — it does not push to ArgoCD or to this repo; Kubernetes pulls from it during deployment, nothing more.
+Separating them means the app team never needs cluster credentials, and the cluster's desired state is always fully described in Git, independent of any single CI run. GHCR is a passive artifact store here — it does not push to ArgoCD or to this repo; Kubernetes pulls from it during deployment, nothing more. The `gitops-demo` GHCR package is public, so no `imagePullSecrets` or registry credentials are required on the cluster side — only the CI push requires authentication.
 
 **Why Kind:** a local Kind cluster gives a real, multi-node-capable Kubernetes API to reconcile against, without needing cloud credentials or spend just to validate the pipeline mechanics. It's a deliberate scope boundary, not a limitation I'm unaware of — moving to a managed cluster is a Future Improvement, not a blocker to what's already working here.
 
